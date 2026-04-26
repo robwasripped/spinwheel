@@ -45,7 +45,80 @@
         const wheel = document.getElementById("spinwheel");
         const spinButton = document.getElementById("spinButton");
         const wheelPanel = wheel.closest(".wheel-panel");
+        const wheelFrame = wheel.closest(".wheel-frame");
+        const spinDurationMs = 4800;
+        const zoomDelayMs = 2300;
+        const zoomDurationMs = 2500;
+        const zoomResetDurationMs = 650;
         let currentRotation = 0;
+        let spinCompletionTimeout;
+        let zoomCompletionTimeout;
+
+        function resetCycleClasses() {
+            wheelPanel.classList.remove("is-zooming", "is-zoomed", "is-resetting");
+        }
+
+        function clearCycleTimeouts() {
+            window.clearTimeout(spinCompletionTimeout);
+            window.clearTimeout(zoomCompletionTimeout);
+        }
+
+        function startSpinCycle() {
+            const segmentCount = segmentValues.length;
+            const segmentSize = 360 / segmentCount;
+            const fullTurns = 6;
+            const winningIndex = Math.floor(Math.random() * segmentCount);
+            const winningCenterAngle = winningIndex * segmentSize + segmentSize / 2;
+            const restingRotation = (270 - winningCenterAngle + 360) % 360;
+            const normalizedCurrentRotation = ((currentRotation % 360) + 360) % 360;
+            const rotationDelta = (restingRotation - normalizedCurrentRotation + 360) % 360;
+            const nextRotation = currentRotation + fullTurns * 360 + rotationDelta;
+            const spinUpPortion = 0.018;
+            const spinUpRotation = currentRotation + (nextRotation - currentRotation) * spinUpPortion;
+
+            wheel.style.setProperty("--spin-start", `${currentRotation}deg`);
+            wheel.style.setProperty("--spin-up-end", `${spinUpRotation}deg`);
+            wheel.style.setProperty("--spin-end", `${nextRotation}deg`);
+
+            clearCycleTimeouts();
+            resetCycleClasses();
+            spinButton.disabled = true;
+            wheel.classList.remove("is-spinning");
+            void wheel.offsetWidth;
+            wheelPanel.classList.add("is-zooming");
+            wheel.classList.add("is-spinning");
+            currentRotation = nextRotation % 360;
+
+            spinCompletionTimeout = window.setTimeout(() => {
+                wheel.classList.remove("is-spinning");
+                wheel.style.transform = `rotate(${currentRotation}deg)`;
+            }, spinDurationMs);
+
+            zoomCompletionTimeout = window.setTimeout(() => {
+                wheelPanel.classList.remove("is-zooming");
+                wheelPanel.classList.add("is-zoomed");
+                spinButton.disabled = false;
+            }, zoomDelayMs + zoomDurationMs);
+        }
+
+        function queueNextSpin() {
+            if (!wheelPanel.classList.contains("is-zoomed")) {
+                return;
+            }
+
+            spinButton.disabled = true;
+            wheelPanel.classList.remove("is-zoomed");
+            wheelPanel.classList.add("is-resetting");
+
+            window.setTimeout(() => {
+                if (!wheelPanel.classList.contains("is-resetting")) {
+                    return;
+                }
+
+                wheelPanel.classList.remove("is-resetting");
+                startSpinCycle();
+            }, zoomResetDurationMs);
+        }
 
         function buildWheel() {
             const segmentSize = 360 / segmentValues.length;
@@ -75,41 +148,20 @@
             });
         }
 
-        function spinWheel() {
-            const segmentCount = segmentValues.length;
-            const segmentSize = 360 / segmentCount;
-            const fullTurns = 6;
-            const winningIndex = Math.floor(Math.random() * segmentCount);
-            const winningCenterAngle = winningIndex * segmentSize + segmentSize / 2;
-            const restingRotation = (270 - winningCenterAngle + 360) % 360;
-            const normalizedCurrentRotation = ((currentRotation % 360) + 360) % 360;
-            const rotationDelta = (restingRotation - normalizedCurrentRotation + 360) % 360;
-            const nextRotation = currentRotation + fullTurns * 360 + rotationDelta;
-            const spinUpPortion = 0.018;
-            const spinUpRotation = currentRotation + (nextRotation - currentRotation) * spinUpPortion;
-
-            wheel.style.setProperty("--spin-start", `${currentRotation}deg`);
-            wheel.style.setProperty("--spin-up-end", `${spinUpRotation}deg`);
-            wheel.style.setProperty("--spin-end", `${nextRotation}deg`);
-            wheelPanel.classList.remove("is-zooming");
-            wheel.classList.remove("is-spinning");
-            void wheel.offsetWidth;
-            wheelPanel.classList.add("is-zooming");
-            wheel.classList.add("is-spinning");
-            currentRotation = nextRotation % 360;
-        }
-
         buildWheel();
-        wheel.addEventListener("animationend", (event) => {
-            if (event.animationName !== "wheel-spin-main") {
+
+        spinButton.addEventListener("click", () => {
+            if (wheelPanel.classList.contains("is-zoomed")) {
+                queueNextSpin();
                 return;
             }
 
-            wheelPanel.classList.remove("is-zooming");
-            wheel.classList.remove("is-spinning");
-            wheel.style.transform = `rotate(${currentRotation}deg)`;
+            if (wheel.classList.contains("is-spinning") || wheelPanel.classList.contains("is-resetting")) {
+                return;
+            }
+
+            startSpinCycle();
         });
-        spinButton.addEventListener("click", spinWheel);
     </script>
 </body>
 </html>
