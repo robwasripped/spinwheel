@@ -53,7 +53,7 @@
                 return `${color} ${start}deg ${end}deg`;
             });
 
-            wheel.style.background = `conic-gradient(${gradientStops.join(", ")})`;
+            wheel.style.setProperty("--wheel-gradient", `conic-gradient(${gradientStops.join(", ")})`);
 
             segmentValues.forEach((value, index) => {
                 const label = document.createElement("span");
@@ -76,8 +76,11 @@
             const fullTurns = 6;
             const randomOffset = Math.floor(Math.random() * 360);
             const nextRotation = currentRotation + fullTurns * 360 + randomOffset;
+            const spinUpPortion = 0.018;
+            const spinUpRotation = currentRotation + (nextRotation - currentRotation) * spinUpPortion;
 
             wheel.style.setProperty("--spin-start", `${currentRotation}deg`);
+            wheel.style.setProperty("--spin-up-end", `${spinUpRotation}deg`);
             wheel.style.setProperty("--spin-end", `${nextRotation}deg`);
             wheel.classList.remove("is-spinning");
             void wheel.offsetWidth;
@@ -86,7 +89,11 @@
         }
 
         buildWheel();
-        wheel.addEventListener("animationend", () => {
+        wheel.addEventListener("animationend", (event) => {
+            if (event.animationName !== "wheel-spin-main") {
+                return;
+            }
+
             wheel.classList.remove("is-spinning");
             wheel.style.transform = `rotate(${currentRotation}deg)`;
         });

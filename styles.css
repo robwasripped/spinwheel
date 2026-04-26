@@ -46,14 +46,30 @@ body {
 
 .wheel {
     --spin-start: 0deg;
+    --spin-up-end: 0deg;
     --spin-end: 0deg;
+    --wheel-gradient: conic-gradient(#ff6b6b 0deg 360deg);
     position: relative;
     width: 100%;
     height: 100%;
     border-radius: 50%;
     border: 0.75rem solid #1f2933;
     overflow: hidden;
+    background: var(--wheel-gradient);
     transform: rotate(0deg);
+}
+
+.wheel::before {
+    content: "";
+    position: absolute;
+    inset: -0.7rem;
+    border-radius: 50%;
+    background: var(--wheel-gradient);
+    opacity: 0;
+    filter: blur(0px) saturate(1);
+    transform: rotate(0deg) scale(1);
+    pointer-events: none;
+    z-index: 1;
 }
 
 .wheel::after {
@@ -66,10 +82,13 @@ body {
     border: 0.35rem solid #ffffff;
     border-radius: 50%;
     transform: translate(-50%, -50%);
+    z-index: 3;
 }
 
 .wheel.is-spinning {
-    animation: wheel-spin 4.8s cubic-bezier(0.16, 0.96, 0.3, 1) forwards;
+    animation:
+        wheel-spin-up 0.2s ease-in forwards,
+        wheel-spin-main 4.6s cubic-bezier(0.16, 0.96, 0.3, 1) 0.2s forwards;
 }
 
 .wheel-label {
@@ -79,6 +98,7 @@ body {
     justify-content: center;
     padding-top: 2rem;
     transform-origin: center center;
+    z-index: 2;
 }
 
 .wheel-label-text {
@@ -89,6 +109,18 @@ body {
     font-weight: 700;
     color: #ffffff;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+.wheel.is-spinning .wheel-label-text {
+    animation:
+        label-motion-blur-up 0.2s ease-in forwards,
+        label-motion-blur-decay 3.6s cubic-bezier(0.16, 0.96, 0.3, 1) 0.2s forwards;
+}
+
+.wheel.is-spinning::before {
+    animation:
+        segment-color-blur-up 0.2s ease-in forwards,
+        segment-color-blur-decay 3s cubic-bezier(0.16, 0.96, 0.3, 1) 0.2s forwards;
 }
 
 .spin-button {
@@ -107,13 +139,134 @@ body {
     background: #253046;
 }
 
-@keyframes wheel-spin {
+@keyframes wheel-spin-up {
     from {
         transform: rotate(var(--spin-start));
     }
 
     to {
+        transform: rotate(var(--spin-up-end));
+    }
+}
+
+@keyframes wheel-spin-main {
+    from {
+        transform: rotate(var(--spin-up-end));
+    }
+
+    to {
         transform: rotate(var(--spin-end));
+    }
+}
+
+@keyframes segment-color-blur-up {
+    from {
+        opacity: 0;
+        filter: blur(0px) saturate(1);
+        transform: rotate(0deg) scale(1);
+    }
+
+    to {
+        opacity: 1;
+        filter: blur(28px) saturate(1.35);
+        transform: rotate(-10deg) scale(1.12);
+    }
+}
+
+@keyframes segment-color-blur-decay {
+    0% {
+        opacity: 1;
+        filter: blur(28px) saturate(1.35);
+        transform: rotate(-10deg) scale(1.12);
+    }
+    24% {
+        opacity: 0.92;
+        filter: blur(22px) saturate(1.28);
+        transform: rotate(-7deg) scale(1.09);
+    }
+    50% {
+        opacity: 0.74;
+        filter: blur(15px) saturate(1.18);
+        transform: rotate(-4.5deg) scale(1.06);
+    }
+    74% {
+        opacity: 0.46;
+        filter: blur(8px) saturate(1.1);
+        transform: rotate(-2deg) scale(1.03);
+    }
+    90%,
+    100% {
+        opacity: 0;
+        filter: blur(0px) saturate(1);
+        transform: rotate(0deg) scale(1);
+    }
+}
+
+/*
+ * Motion blur in the opposite direction to the clockwise spin.
+ * Each label's text is rotated 90deg so the trailing direction
+ * in its local frame is negative-X (to the left).
+ * Blur is heaviest at t=0 (peak speed) and decays to nothing.
+ */
+@keyframes label-motion-blur-up {
+    from {
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+    }
+
+    to {
+        text-shadow:
+            -4px  0 2px  rgba(255, 255, 255, 0.95),
+            -10px 0 4px  rgba(255, 255, 255, 0.85),
+            -20px 0 6px  rgba(255, 255, 255, 0.7),
+            -34px 0 10px rgba(255, 255, 255, 0.5),
+            -52px 0 16px rgba(255, 255, 255, 0.3),
+            -72px 0 24px rgba(255, 255, 255, 0.15),
+            -95px 0 32px rgba(255, 255, 255, 0.07);
+    }
+}
+
+@keyframes label-motion-blur-decay {
+    0% {
+        text-shadow:
+            -4px  0 2px  rgba(255, 255, 255, 0.95),
+            -10px 0 4px  rgba(255, 255, 255, 0.85),
+            -20px 0 6px  rgba(255, 255, 255, 0.7),
+            -34px 0 10px rgba(255, 255, 255, 0.5),
+            -52px 0 16px rgba(255, 255, 255, 0.3),
+            -72px 0 24px rgba(255, 255, 255, 0.15),
+            -95px 0 32px rgba(255, 255, 255, 0.07);
+    }
+    20% {
+        text-shadow:
+            -4px  0 2px  rgba(255, 255, 255, 0.9),
+            -10px 0 4px  rgba(255, 255, 255, 0.75),
+            -20px 0 6px  rgba(255, 255, 255, 0.6),
+            -34px 0 10px rgba(255, 255, 255, 0.4),
+            -50px 0 16px rgba(255, 255, 255, 0.22),
+            -68px 0 22px rgba(255, 255, 255, 0.1);
+    }
+    40% {
+        text-shadow:
+            -3px  0 2px  rgba(255, 255, 255, 0.7),
+            -8px  0 4px  rgba(255, 255, 255, 0.55),
+            -16px 0 7px  rgba(255, 255, 255, 0.38),
+            -28px 0 12px rgba(255, 255, 255, 0.2),
+            -42px 0 18px rgba(255, 255, 255, 0.09);
+    }
+    60% {
+        text-shadow:
+            -2px  0 2px  rgba(255, 255, 255, 0.45),
+            -5px  0 4px  rgba(255, 255, 255, 0.28),
+            -10px 0 8px  rgba(255, 255, 255, 0.13),
+            -18px 0 12px rgba(255, 255, 255, 0.05);
+    }
+    78% {
+        text-shadow:
+            -1px  0 1px  rgba(255, 255, 255, 0.2),
+            -3px  0 4px  rgba(255, 255, 255, 0.08);
+    }
+    90%, 100% {
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
     }
 }
 
