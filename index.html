@@ -9,9 +9,11 @@
 <body>
     <main class="page">
         <section class="wheel-panel">
-            <div class="pointer" aria-hidden="true"></div>
-            <div class="wheel-frame">
-                <div class="wheel" id="spinwheel" aria-label="Prize wheel"></div>
+            <div class="wheel-stage">
+                <div class="wheel-frame">
+                    <div class="pointer" aria-hidden="true"></div>
+                    <div class="wheel" id="spinwheel" aria-label="Prize wheel"></div>
+                </div>
             </div>
             <button class="spin-button" id="spinButton" type="button">Spin</button>
         </section>
@@ -42,6 +44,7 @@
 
         const wheel = document.getElementById("spinwheel");
         const spinButton = document.getElementById("spinButton");
+        const wheelPanel = wheel.closest(".wheel-panel");
         let currentRotation = 0;
 
         function buildWheel() {
@@ -82,8 +85,10 @@
             wheel.style.setProperty("--spin-start", `${currentRotation}deg`);
             wheel.style.setProperty("--spin-up-end", `${spinUpRotation}deg`);
             wheel.style.setProperty("--spin-end", `${nextRotation}deg`);
+            wheelPanel.classList.remove("is-zooming");
             wheel.classList.remove("is-spinning");
             void wheel.offsetWidth;
+            wheelPanel.classList.add("is-zooming");
             wheel.classList.add("is-spinning");
             currentRotation = nextRotation % 360;
         }
@@ -94,6 +99,7 @@
                 return;
             }
 
+            wheelPanel.classList.remove("is-zooming");
             wheel.classList.remove("is-spinning");
             wheel.style.transform = `rotate(${currentRotation}deg)`;
         });

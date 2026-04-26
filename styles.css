@@ -8,6 +8,7 @@ body {
     font-family: "Trebuchet MS", sans-serif;
     background: #f7f4ea;
     color: #1f2933;
+    overflow: hidden;
 }
 
 .page {
@@ -23,7 +24,17 @@ body {
     gap: 1.5rem;
 }
 
+.wheel-panel.is-zooming {
+    width: 100%;
+}
+
+.wheel-stage {
+    display: grid;
+    justify-items: center;
+}
+
 .wheel-frame {
+    position: relative;
     width: min(78vw, 32rem);
     aspect-ratio: 1;
     display: grid;
@@ -32,16 +43,29 @@ body {
     border-radius: 50%;
     background: #ffffff;
     box-shadow: 0 1.25rem 3rem rgba(15, 23, 42, 0.14);
+    transform: translate3d(0, 0, 0) scale(1);
+    will-change: transform;
+}
+
+.wheel-panel.is-zooming .wheel-frame {
+    animation: segment-closeup 5s cubic-bezier(0.15, 0, 0.18, 1) 0.5s forwards;
 }
 
 .pointer {
+    position: absolute;
+    left: 50%;
+    top: -3rem;
     width: 0;
     height: 0;
     border-left: 1rem solid transparent;
     border-right: 1rem solid transparent;
     border-top: 1.75rem solid #111827;
-    transform: translateY(1rem);
-    z-index: 1;
+    transform: translate(-50%, 0.9rem);
+    z-index: 4;
+}
+
+.wheel-panel.is-zooming .spin-button {
+    animation: interface-fade 0.35s ease-out 2.3s forwards;
 }
 
 .wheel {
@@ -156,6 +180,26 @@ body {
 
     to {
         transform: rotate(var(--spin-end));
+    }
+}
+
+@keyframes segment-closeup {
+    from {
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+
+    to {
+        transform: translate3d(0, 37vh, 0) scale(3.15);
+    }
+}
+
+@keyframes interface-fade {
+    from {
+        opacity: 1;
+    }
+
+    to {
+        opacity: 0;
     }
 }
 
@@ -278,5 +322,15 @@ body {
     .wheel-label-text {
         width: 5.25rem;
         font-size: 0.8rem;
+    }
+
+    @keyframes segment-closeup {
+        from {
+            transform: translate3d(0, 0, 0) scale(1);
+        }
+
+        to {
+            transform: translate3d(0, 31vh, 0) scale(2.5);
+        }
     }
 }
