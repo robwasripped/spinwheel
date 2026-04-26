@@ -76,9 +76,15 @@
         }
 
         function spinWheel() {
+            const segmentCount = segmentValues.length;
+            const segmentSize = 360 / segmentCount;
             const fullTurns = 6;
-            const randomOffset = Math.floor(Math.random() * 360);
-            const nextRotation = currentRotation + fullTurns * 360 + randomOffset;
+            const winningIndex = Math.floor(Math.random() * segmentCount);
+            const winningCenterAngle = winningIndex * segmentSize + segmentSize / 2;
+            const restingRotation = (270 - winningCenterAngle + 360) % 360;
+            const normalizedCurrentRotation = ((currentRotation % 360) + 360) % 360;
+            const rotationDelta = (restingRotation - normalizedCurrentRotation + 360) % 360;
+            const nextRotation = currentRotation + fullTurns * 360 + rotationDelta;
             const spinUpPortion = 0.018;
             const spinUpRotation = currentRotation + (nextRotation - currentRotation) * spinUpPortion;
 
