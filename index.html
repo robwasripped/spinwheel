@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spinwheel</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <main class="page">
+        <section class="wheel-panel">
+            <div class="pointer" aria-hidden="true"></div>
+            <div class="wheel-frame">
+                <div class="wheel" id="spinwheel" aria-label="Prize wheel"></div>
+            </div>
+            <button class="spin-button" id="spinButton" type="button">Spin</button>
+        </section>
+    </main>
+
+    <script>
+        const segmentValues = [
+            "$10",
+            "$25",
+            "$50",
+            "$100",
+            "Try Again",
+            "Bonus",
+            "$75",
+            "Jackpot"
+        ];
+
+        const segmentColors = [
+            "#ff6b6b",
+            "#ffd166",
+            "#06d6a0",
+            "#118ab2",
+            "#f78c6b",
+            "#83c5be",
+            "#ef476f",
+            "#26547c"
+        ];
+
+        const wheel = document.getElementById("spinwheel");
+        const spinButton = document.getElementById("spinButton");
+        let currentRotation = 0;
+
+        function buildWheel() {
+            const segmentSize = 360 / segmentValues.length;
+            const gradientStops = segmentColors.map((color, index) => {
+                const start = index * segmentSize;
+                const end = start + segmentSize;
+
+                return `${color} ${start}deg ${end}deg`;
+            });
+
+            wheel.style.background = `conic-gradient(${gradientStops.join(", ")})`;
+
+            segmentValues.forEach((value, index) => {
+                const label = document.createElement("span");
+                const text = document.createElement("span");
+                const angle = index * segmentSize + segmentSize / 2;
+
+                label.className = "wheel-label";
+                label.style.transform = `rotate(${angle}deg)`;
+
+                text.className = "wheel-label-text";
+                text.textContent = value;
+                text.style.transform = `rotate(${90}deg)`;
+
+                label.appendChild(text);
+                wheel.appendChild(label);
+            });
+        }
+
+        function spinWheel() {
+            const fullTurns = 6;
+            const randomOffset = Math.floor(Math.random() * 360);
+            const nextRotation = currentRotation + fullTurns * 360 + randomOffset;
+
+            wheel.style.setProperty("--spin-start", `${currentRotation}deg`);
+            wheel.style.setProperty("--spin-end", `${nextRotation}deg`);
+            wheel.classList.remove("is-spinning");
+            void wheel.offsetWidth;
+            wheel.classList.add("is-spinning");
+            currentRotation = nextRotation % 360;
+        }
+
+        buildWheel();
+        wheel.addEventListener("animationend", () => {
+            wheel.classList.remove("is-spinning");
+            wheel.style.transform = `rotate(${currentRotation}deg)`;
+        });
+        spinButton.addEventListener("click", spinWheel);
+    </script>
+</body>
+</html>
