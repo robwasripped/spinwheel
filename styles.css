@@ -57,7 +57,7 @@ body {
 }
 
 .wheel-panel.is-zoomed .wheel-frame {
-    transform: translate3d(0, 37vh, 0) scale(3.15);
+    transform: translate3d(0, 51vh, 0) scale(3.6);
 }
 
 .wheel-panel.is-resetting .wheel-frame {
@@ -129,7 +129,6 @@ body {
     inset: 0;
     display: flex;
     justify-content: center;
-    padding-top: 2rem;
     transform-origin: center center;
     z-index: 2;
 }
@@ -137,6 +136,7 @@ body {
 .wheel-label-text {
     display: block;
     width: 7rem;
+    padding-top: 1rem;
     text-align: center;
     font-size: 0.95rem;
     font-weight: 700;
@@ -225,13 +225,13 @@ body {
     }
 
     to {
-        transform: translate3d(0, 37vh, 0) scale(3.15);
+        transform: translate3d(0, 51vh, 0) scale(3.6);
     }
 }
 
 @keyframes segment-reset {
     from {
-        transform: translate3d(0, 37vh, 0) scale(3.15);
+        transform: translate3d(0, 51vh, 0) scale(3.6);
     }
 
     to {
@@ -381,12 +381,12 @@ body {
     }
 
     .wheel-panel.is-zoomed .wheel-frame {
-        transform: translate3d(0, 31vh, 0) scale(2.5);
+        transform: translate3d(0, 41vh, 0) scale(2.9);
     }
 
     @keyframes segment-reset {
         from {
-            transform: translate3d(0, 31vh, 0) scale(2.5);
+            transform: translate3d(0, 41vh, 0) scale(2.9);
         }
 
         to {
