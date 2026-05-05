@@ -79,9 +79,10 @@ body {
     aspect-ratio: 1;
     display: grid;
     place-items: center;
-    padding: 1rem;
+    padding: 0;
     border-radius: 50%;
-    background: #ffffff;
+    background: none !important;
+    background-color: transparent !important;
     box-shadow: 0 1.25rem 3rem rgba(15, 23, 42, 0.14);
     transform: translate3d(0, 0, 0) scale(1);
     will-change: transform;
@@ -97,6 +98,13 @@ body {
 
 .wheel-panel.is-resetting .wheel-frame {
     animation: segment-reset 0.65s cubic-bezier(0.5, 0, 0.2, 1) forwards;
+}
+
+.wheel-panel.is-zooming .wheel-frame,
+.wheel-panel.is-zoomed .wheel-frame,
+.wheel-panel.is-resetting .wheel-frame {
+    background: none !important;
+    background-color: transparent !important;
 }
 
 .pointer {
@@ -122,6 +130,7 @@ body {
     height: 100%;
     border-radius: 50%;
     border: 0.75rem solid #1f2933;
+    box-shadow: 0 0 0 0.85rem #ffffff;
     overflow: hidden;
     background: var(--wheel-gradient);
     transform: rotate(0deg);
