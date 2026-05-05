@@ -225,7 +225,12 @@ body {
 
 .view-edit {
     display: grid;
-    place-items: center;
+    place-items: start center;
+    width: 100%;
+    max-height: calc(100vh - 8rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
 }
 
 .editor-card {
@@ -598,6 +603,10 @@ body {
 
     .editor-card {
         padding: 1rem;
+    }
+
+    .view-edit {
+        max-height: calc(100vh - 5.5rem);
     }
 
     .segment-main-controls {
