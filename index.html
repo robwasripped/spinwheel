@@ -8,51 +8,72 @@
 </head>
 <body>
     <main class="page">
-        <section class="wheel-panel">
-            <div class="wheel-stage">
-                <div class="wheel-frame">
-                    <div class="pointer" aria-hidden="true"></div>
-                    <div class="wheel" id="spinwheel" aria-label="Prize wheel"></div>
+        <div class="view-switch" role="tablist" aria-label="Spinwheel views">
+            <button class="view-tab is-active" id="playTab" type="button" role="tab" aria-controls="playView" aria-selected="true">Play</button>
+            <button class="view-tab" id="editTab" type="button" role="tab" aria-controls="editView" aria-selected="false">Edit</button>
+        </div>
+
+        <section class="view view-play is-active" id="playView" role="tabpanel" aria-labelledby="playTab">
+            <section class="wheel-panel">
+                <div class="wheel-stage">
+                    <div class="wheel-frame">
+                        <div class="pointer" aria-hidden="true"></div>
+                        <div class="wheel" id="spinwheel" aria-label="Prize wheel"></div>
+                    </div>
                 </div>
+                <button class="spin-button" id="spinButton" type="button">Spin</button>
+            </section>
+        </section>
+
+        <section class="view view-edit" id="editView" role="tabpanel" aria-labelledby="editTab" hidden>
+            <div class="editor-card">
+                <h2>Configure Wheel</h2>
+                <p>Edit each segment's text and type. Type controls the segment color.</p>
+
+                <ul id="segmentList" class="segment-list" aria-label="Wheel segments"></ul>
+
+                <button type="button" id="addSegmentButton" class="add-button">+ Add Segment</button>
             </div>
-            <button class="spin-button" id="spinButton" type="button">Spin</button>
         </section>
     </main>
 
     <script>
-        const segmentValues = [
-            "$10",
-            "$25",
-            "$50",
-            "$100",
-            "Try Again",
-            "Bonus",
-            "$75",
-            "Jackpot"
-        ];
+        const TYPE_STYLES = {
+            prize: "#06d6a0",
+            bonus: "#118ab2",
+            challenge: "#ffd166",
+            miss: "#ef476f"
+        };
 
-        const segmentColors = [
-            "#ff6b6b",
-            "#ffd166",
-            "#06d6a0",
-            "#118ab2",
-            "#f78c6b",
-            "#83c5be",
-            "#ef476f",
-            "#26547c"
+        let segmentEntries = [
+            { type: "prize", texts: ["$10", "$20"], cursor: 0 },
+            { type: "prize", texts: ["$25"], cursor: 0 },
+            { type: "bonus", texts: ["$50", "$100"], cursor: 0 },
+            { type: "bonus", texts: ["$100", "Jackpot"], cursor: 0 },
+            { type: "miss", texts: ["Try Again"], cursor: 0 },
+            { type: "challenge", texts: ["Bonus", "Bonus x2"], cursor: 0 },
+            { type: "prize", texts: ["$75"], cursor: 0 },
+            { type: "bonus", texts: ["Jackpot"], cursor: 0 }
         ];
 
         const wheel = document.getElementById("spinwheel");
         const spinButton = document.getElementById("spinButton");
         const wheelPanel = wheel.closest(".wheel-panel");
-        const wheelFrame = wheel.closest(".wheel-frame");
+        const playTab = document.getElementById("playTab");
+        const editTab = document.getElementById("editTab");
+        const playView = document.getElementById("playView");
+        const editView = document.getElementById("editView");
+        const segmentList = document.getElementById("segmentList");
+        const addSegmentButton = document.getElementById("addSegmentButton");
         const spinDurationMs = 4800;
         const zoomDelayMs = 2300;
         const zoomDurationMs = 2500;
         const zoomResetDurationMs = 650;
+        const spinAgainPauseMs = 2000;
         let currentRotation = 0;
         let spinCompletionTimeout;
         let zoomCompletionTimeout;
+        let pendingWinningIndex = null;
 
         function resetCycleClasses() {
             wheelPanel.classList.remove("is-zooming", "is-zoomed", "is-resetting");
@@ -63,11 +84,57 @@
             window.clearTimeout(zoomCompletionTimeout);
         }
 
+        function normalizeEntry(entry) {
+            const chain = Array.isArray(entry.texts) ? entry.texts.slice() : [];
+
+            if (chain.length === 0) {
+                chain.push(typeof entry.text === "string" ? entry.text : "");
+            }
+
+            return {
+                type: entry.type || "prize",
+                texts: chain.map((value) => String(value)),
+                cursor: Number.isInteger(entry.cursor) ? Math.max(0, entry.cursor) : 0
+            };
+        }
+
+        function clampCursor(entry) {
+            const lastIndex = entry.texts.length - 1;
+            entry.cursor = Math.min(Math.max(entry.cursor, 0), Math.max(lastIndex, 0));
+        }
+
+        function getCurrentSegmentText(entry) {
+            clampCursor(entry);
+            return entry.texts[entry.cursor] || "";
+        }
+
+        function applySegmentReplacement(index) {
+            if (index == null || index < 0 || index >= segmentEntries.length) {
+                return false;
+            }
+
+            const entry = segmentEntries[index];
+            const lastIndex = entry.texts.length - 1;
+
+            if (entry.cursor < lastIndex) {
+                entry.cursor += 1;
+                return true;
+            }
+
+            return false;
+        }
+
         function startSpinCycle() {
-            const segmentCount = segmentValues.length;
+            const segmentCount = segmentEntries.length;
+
+            if (segmentCount < 2) {
+                return;
+            }
+
             const segmentSize = 360 / segmentCount;
             const fullTurns = 6;
             const winningIndex = Math.floor(Math.random() * segmentCount);
+            pendingWinningIndex = winningIndex;
             const winningCenterAngle = winningIndex * segmentSize + segmentSize / 2;
             const restingRotation = (270 - winningCenterAngle + 360) % 360;
             const normalizedCurrentRotation = ((currentRotation % 360) + 360) % 360;
@@ -107,31 +174,212 @@
             }
 
             spinButton.disabled = true;
-            wheelPanel.classList.remove("is-zoomed");
-            wheelPanel.classList.add("is-resetting");
+            wheelPanel.classList.add("is-holding");
 
-            window.setTimeout(() => {
-                if (!wheelPanel.classList.contains("is-resetting")) {
+            const hasTextChange = applySegmentReplacement(pendingWinningIndex);
+            pendingWinningIndex = null;
+            buildWheel(false);
+            renderSegmentList();
+
+            const startResetCycle = () => {
+                if (!wheelPanel.classList.contains("is-zoomed")) {
                     return;
                 }
 
-                wheelPanel.classList.remove("is-resetting");
-                startSpinCycle();
-            }, zoomResetDurationMs);
+                wheelPanel.classList.remove("is-holding");
+                wheelPanel.classList.remove("is-zoomed");
+                wheelPanel.classList.add("is-resetting");
+
+                window.setTimeout(() => {
+                    if (!wheelPanel.classList.contains("is-resetting")) {
+                        return;
+                    }
+
+                    wheelPanel.classList.remove("is-resetting");
+                    startSpinCycle();
+                }, zoomResetDurationMs);
+            };
+
+            if (!hasTextChange) {
+                startResetCycle();
+                return;
+            }
+
+            window.setTimeout(startResetCycle, spinAgainPauseMs);
         }
 
-        function buildWheel() {
-            const segmentSize = 360 / segmentValues.length;
-            const gradientStops = segmentColors.map((color, index) => {
+        function getSegmentColor(entry) {
+            return TYPE_STYLES[entry.type] || "#26547c";
+        }
+
+        function setActiveView(viewName) {
+            const showPlay = viewName === "play";
+
+            playView.classList.toggle("is-active", showPlay);
+            playView.hidden = !showPlay;
+            editView.classList.toggle("is-active", !showPlay);
+            editView.hidden = showPlay;
+
+            playTab.classList.toggle("is-active", showPlay);
+            playTab.setAttribute("aria-selected", String(showPlay));
+            editTab.classList.toggle("is-active", !showPlay);
+            editTab.setAttribute("aria-selected", String(!showPlay));
+        }
+
+        function resetWheelState() {
+            clearCycleTimeouts();
+            resetCycleClasses();
+            wheel.classList.remove("is-spinning");
+            currentRotation = 0;
+            pendingWinningIndex = null;
+            wheel.style.transform = "rotate(0deg)";
+            spinButton.disabled = segmentEntries.length < 2;
+        }
+
+        const TYPE_OPTIONS = ["prize", "bonus", "challenge", "miss"];
+
+        function renderSegmentList() {
+            segmentList.innerHTML = "";
+
+            segmentEntries.forEach((entry, index) => {
+                const listItem = document.createElement("li");
+                const mainControls = document.createElement("div");
+                const textInput = document.createElement("input");
+                const typeWrap = document.createElement("div");
+                const typeDot = document.createElement("span");
+                const typeSelect = document.createElement("select");
+                const remove = document.createElement("button");
+                const replacements = document.createElement("div");
+                const replacementsTitle = document.createElement("p");
+                const currentValue = document.createElement("p");
+                const addReplacement = document.createElement("button");
+
+                listItem.className = "segment-list-item";
+                mainControls.className = "segment-main-controls";
+                replacements.className = "segment-replacements";
+                replacementsTitle.className = "segment-replacements-title";
+                replacementsTitle.textContent = "Replacement texts";
+
+                currentValue.className = "segment-current-value";
+                currentValue.textContent = `Current live text: ${getCurrentSegmentText(entry) || "(empty)"}`;
+
+                textInput.type = "text";
+                textInput.className = "segment-text-input";
+                textInput.maxLength = 24;
+                textInput.placeholder = "Current text";
+                textInput.value = entry.texts[0] || "";
+                textInput.setAttribute("aria-label", "Segment text");
+                textInput.addEventListener("input", () => {
+                    segmentEntries[index].texts[0] = textInput.value;
+                    buildWheel();
+                    currentValue.textContent = `Current live text: ${getCurrentSegmentText(segmentEntries[index]) || "(empty)"}`;
+                });
+
+                typeWrap.className = "segment-type-wrap";
+
+                typeDot.className = "type-dot";
+                typeDot.style.backgroundColor = getSegmentColor(entry);
+
+                TYPE_OPTIONS.forEach((optVal) => {
+                    const opt = document.createElement("option");
+                    opt.value = optVal;
+                    opt.textContent = optVal.charAt(0).toUpperCase() + optVal.slice(1);
+                    opt.selected = optVal === entry.type;
+                    typeSelect.appendChild(opt);
+                });
+
+                typeSelect.className = "segment-type-select";
+                typeSelect.setAttribute("aria-label", "Segment type");
+                typeSelect.addEventListener("change", () => {
+                    segmentEntries[index].type = typeSelect.value;
+                    typeDot.style.backgroundColor = getSegmentColor(segmentEntries[index]);
+                    buildWheel();
+                });
+
+                remove.type = "button";
+                remove.className = "remove-button";
+                remove.textContent = "Remove";
+                remove.setAttribute("aria-label", `Remove ${entry.texts[0] || "segment"}`);
+                remove.addEventListener("click", () => {
+                    segmentEntries = segmentEntries.filter((_, segmentIndex) => segmentIndex !== index);
+                    buildWheel();
+                    renderSegmentList();
+                });
+
+                addReplacement.type = "button";
+                addReplacement.className = "add-replacement-button";
+                addReplacement.textContent = "+ Add replacement";
+                addReplacement.addEventListener("click", () => {
+                    segmentEntries[index].texts.push("");
+                    clampCursor(segmentEntries[index]);
+                    renderSegmentList();
+                });
+
+                entry.texts.slice(1).forEach((replacementText, replacementOffset) => {
+                    const replacementIndex = replacementOffset + 1;
+                    const replacementRow = document.createElement("div");
+                    const replacementInput = document.createElement("input");
+                    const removeReplacement = document.createElement("button");
+
+                    replacementRow.className = "replacement-row";
+
+                    replacementInput.type = "text";
+                    replacementInput.className = "replacement-input";
+                    replacementInput.maxLength = 24;
+                    replacementInput.placeholder = `Replacement ${replacementIndex}`;
+                    replacementInput.value = replacementText;
+                    replacementInput.setAttribute("aria-label", `Replacement ${replacementIndex}`);
+                    replacementInput.addEventListener("input", () => {
+                        segmentEntries[index].texts[replacementIndex] = replacementInput.value;
+                        buildWheel();
+                        currentValue.textContent = `Current live text: ${getCurrentSegmentText(segmentEntries[index]) || "(empty)"}`;
+                    });
+
+                    removeReplacement.type = "button";
+                    removeReplacement.className = "remove-replacement-button";
+                    removeReplacement.textContent = "Remove";
+                    removeReplacement.addEventListener("click", () => {
+                        segmentEntries[index].texts.splice(replacementIndex, 1);
+                        clampCursor(segmentEntries[index]);
+                        buildWheel();
+                        renderSegmentList();
+                    });
+
+                    replacementRow.append(replacementInput, removeReplacement);
+                    replacements.appendChild(replacementRow);
+                });
+
+                typeWrap.append(typeDot, typeSelect);
+                mainControls.append(textInput, typeWrap, remove);
+                replacements.append(replacementsTitle, currentValue, addReplacement);
+                listItem.append(mainControls, replacements);
+                segmentList.appendChild(listItem);
+            });
+        }
+
+        function buildWheel(shouldResetState = true) {
+            wheel.innerHTML = "";
+
+            if (segmentEntries.length === 0) {
+                wheel.style.setProperty("--wheel-gradient", "conic-gradient(#d1d5db 0deg 360deg)");
+                if (shouldResetState) {
+                    resetWheelState();
+                }
+                return;
+            }
+
+            const segmentSize = 360 / segmentEntries.length;
+            const gradientStops = segmentEntries.map((entry, index) => {
                 const start = index * segmentSize;
                 const end = start + segmentSize;
+                const color = getSegmentColor(entry);
 
                 return `${color} ${start}deg ${end}deg`;
             });
 
             wheel.style.setProperty("--wheel-gradient", `conic-gradient(${gradientStops.join(", ")})`);
 
-            segmentValues.forEach((value, index) => {
+            segmentEntries.forEach((entry, index) => {
                 const label = document.createElement("span");
                 const text = document.createElement("span");
                 const angle = index * segmentSize + segmentSize / 2;
@@ -140,15 +388,34 @@
                 label.style.transform = `rotate(${angle}deg)`;
 
                 text.className = "wheel-label-text";
-                text.textContent = value;
+                text.textContent = getCurrentSegmentText(entry);
                 text.style.transform = `rotate(${90}deg)`;
 
                 label.appendChild(text);
                 wheel.appendChild(label);
             });
+
+            if (shouldResetState) {
+                resetWheelState();
+            }
         }
 
+        playTab.addEventListener("click", () => setActiveView("play"));
+        editTab.addEventListener("click", () => setActiveView("edit"));
+
+        addSegmentButton.addEventListener("click", () => {
+            segmentEntries.push({ type: "prize", texts: [""], cursor: 0 });
+            buildWheel();
+            renderSegmentList();
+
+            const newInput = segmentList.lastElementChild.querySelector(".segment-text-input");
+            newInput.focus();
+        });
+
+        segmentEntries = segmentEntries.map(normalizeEntry);
+
         buildWheel();
+        renderSegmentList();
 
         spinButton.addEventListener("click", () => {
             if (wheelPanel.classList.contains("is-zoomed")) {

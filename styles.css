@@ -14,8 +14,43 @@ body {
 .page {
     min-height: 100vh;
     display: grid;
-    place-items: center;
+    align-content: center;
+    justify-items: center;
+    gap: 1.25rem;
     padding: 2rem;
+}
+
+.view-switch {
+    display: inline-flex;
+    gap: 0.45rem;
+    padding: 0.35rem;
+    border-radius: 999px;
+    background: #e6e0d0;
+}
+
+.view-tab {
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: #334155;
+    font: inherit;
+    font-size: 0.92rem;
+    font-weight: 700;
+    padding: 0.55rem 1rem;
+    cursor: pointer;
+}
+
+.view-tab.is-active {
+    background: #111827;
+    color: #ffffff;
+}
+
+.view {
+    width: 100%;
+}
+
+.view[hidden] {
+    display: none;
 }
 
 .wheel-panel {
@@ -188,8 +223,195 @@ body {
     cursor: default;
 }
 
+.view-edit {
+    display: grid;
+    place-items: center;
+}
+
+.editor-card {
+    width: min(44rem, 96vw);
+    background: #ffffff;
+    border-radius: 1.2rem;
+    box-shadow: 0 1.2rem 2.6rem rgba(15, 23, 42, 0.12);
+    padding: 1.2rem;
+}
+
+.editor-card h2 {
+    margin: 0;
+    font-size: 1.35rem;
+}
+
+.editor-card p {
+    margin: 0.35rem 0 1.15rem;
+    color: #475569;
+}
+
+.add-button {
+    display: block;
+    margin-top: 0.75rem;
+    border: 0;
+    border-radius: 0.65rem;
+    padding: 0.72rem 1rem;
+    font: inherit;
+    font-weight: 700;
+    background: #111827;
+    color: #fff;
+    cursor: pointer;
+}
+
+.segment-list {
+    list-style: none;
+    margin: 1rem 0 0;
+    padding: 0;
+    display: grid;
+    gap: 0.55rem;
+}
+
+.segment-list-item {
+    display: grid;
+    gap: 0.7rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.7rem;
+    padding: 0.75rem;
+}
+
+.segment-main-controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 0.55rem;
+    align-items: center;
+}
+
+.segment-text-input {
+    width: 100%;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.6rem;
+    font: inherit;
+    font-size: 0.95rem;
+    background: #fff;
+}
+
+.segment-text-input:focus {
+    outline: 2px solid #89a4c6;
+    outline-offset: 1px;
+}
+
+.segment-type-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: #fff;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.6rem;
+}
+
+.type-dot {
+    flex-shrink: 0;
+    width: 0.7rem;
+    height: 0.7rem;
+    border-radius: 50%;
+    transition: background-color 200ms ease;
+}
+
+.segment-type-select {
+    border: 0;
+    padding: 0;
+    min-width: 6.25rem;
+    font: inherit;
+    font-size: 0.9rem;
+    background: transparent;
+    cursor: pointer;
+}
+
+.segment-type-select:focus {
+    outline: 2px solid #89a4c6;
+    border-radius: 2px;
+}
+
+.remove-button {
+    border: 0;
+    border-radius: 0.5rem;
+    background: #fee2e2;
+    color: #7f1d1d;
+    font: inherit;
+    font-size: 0.82rem;
+    font-weight: 700;
+    padding: 0.4rem 0.62rem;
+    cursor: pointer;
+}
+
+.segment-replacements {
+    display: grid;
+    gap: 0.45rem;
+    border-top: 1px solid #e2e8f0;
+    padding-top: 0.6rem;
+}
+
+.segment-replacements-title,
+.segment-current-value {
+    margin: 0;
+    font-size: 0.82rem;
+    color: #334155;
+}
+
+.segment-current-value {
+    color: #64748b;
+}
+
+.replacement-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.5rem;
+}
+
+.replacement-input {
+    width: 100%;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.5rem;
+    padding: 0.45rem 0.6rem;
+    font: inherit;
+    font-size: 0.9rem;
+    background: #fff;
+}
+
+.replacement-input:focus {
+    outline: 2px solid #89a4c6;
+    outline-offset: 1px;
+}
+
+.add-replacement-button,
+.remove-replacement-button {
+    border: 0;
+    border-radius: 0.45rem;
+    padding: 0.38rem 0.62rem;
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.add-replacement-button {
+    justify-self: start;
+    background: #dbeafe;
+    color: #1e3a8a;
+}
+
+.remove-replacement-button {
+    background: #fee2e2;
+    color: #7f1d1d;
+}
+
 .wheel-panel.is-zooming .spin-button,
 .wheel-panel.is-resetting .spin-button {
+    pointer-events: none;
+    animation: none;
+    opacity: 0;
+}
+
+.wheel-panel.is-holding .spin-button {
     pointer-events: none;
     animation: none;
     opacity: 0;
@@ -363,6 +585,31 @@ body {
 @media (max-width: 640px) {
     .page {
         padding: 1rem;
+    }
+
+    .view-switch {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .view-tab {
+        flex: 1;
+    }
+
+    .editor-card {
+        padding: 1rem;
+    }
+
+    .segment-main-controls {
+        grid-template-columns: 1fr;
+    }
+
+    .segment-type-wrap {
+        width: fit-content;
+    }
+
+    .remove-button {
+        justify-self: start;
     }
 
     .wheel-label-text {
