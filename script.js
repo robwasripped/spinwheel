@@ -25,9 +25,9 @@ const playView = document.getElementById("playView");
 const editView = document.getElementById("editView");
 const segmentList = document.getElementById("segmentList");
 const addSegmentButton = document.getElementById("addSegmentButton");
-const spinDurationMs = 4800;
+const spinDurationMs = 5800;
 const zoomDelayMs = 2300;
-const zoomDurationMs = 2500;
+const zoomDurationMs = 3500;
 const zoomResetDurationMs = 650;
 const spinAgainPauseMs = 2000;
 let currentRotation = 0;
@@ -136,7 +136,7 @@ function queueNextSpin() {
     spinButton.disabled = true;
     wheelPanel.classList.add("is-holding");
 
-    const hasTextChange = applySegmentReplacement(pendingWinningIndex);
+    applySegmentReplacement(pendingWinningIndex);
     pendingWinningIndex = null;
     buildWheel(false);
     renderSegmentList();
@@ -159,11 +159,6 @@ function queueNextSpin() {
             startSpinCycle();
         }, zoomResetDurationMs);
     };
-
-    if (!hasTextChange) {
-        startResetCycle();
-        return;
-    }
 
     window.setTimeout(startResetCycle, spinAgainPauseMs);
 }

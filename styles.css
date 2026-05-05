@@ -156,7 +156,7 @@ body {
 .wheel.is-spinning {
     animation:
         wheel-spin-up 0.2s ease-in forwards,
-        wheel-spin-main 4.6s cubic-bezier(0.16, 0.96, 0.3, 1) 0.2s forwards;
+        wheel-spin-main 5.6s cubic-bezier(0.16, 0.96, 0.3, 1) 0.2s forwards;
 }
 
 .wheel-label {
@@ -418,8 +418,12 @@ body {
 
 .wheel-panel.is-holding .spin-button {
     pointer-events: none;
-    animation: none;
-    opacity: 0;
+    animation: spin-button-fade-out 0.35s ease-out forwards;
+}
+
+.wheel-panel.is-zoomed.is-holding .spin-button {
+    pointer-events: none;
+    animation: spin-button-fade-out 0.35s ease-out forwards;
 }
 
 .wheel-panel.is-zoomed .spin-button {
@@ -473,6 +477,16 @@ body {
 
     to {
         opacity: 1;
+    }
+}
+
+@keyframes spin-button-fade-out {
+    from {
+        opacity: 1;
+    }
+
+    to {
+        opacity: 0;
     }
 }
 
