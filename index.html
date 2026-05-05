@@ -136,7 +136,7 @@
             const winningIndex = Math.floor(Math.random() * segmentCount);
             pendingWinningIndex = winningIndex;
             const winningCenterAngle = winningIndex * segmentSize + segmentSize / 2;
-            const restingRotation = (270 - winningCenterAngle + 360) % 360;
+            const restingRotation = (360 - winningCenterAngle) % 360;
             const normalizedCurrentRotation = ((currentRotation % 360) + 360) % 360;
             const rotationDelta = (restingRotation - normalizedCurrentRotation + 360) % 360;
             const nextRotation = currentRotation + fullTurns * 360 + rotationDelta;
@@ -210,6 +210,39 @@
 
         function getSegmentColor(entry) {
             return TYPE_STYLES[entry.type] || "#26547c";
+        }
+
+        function serializeToURL() {
+            const params = new URLSearchParams();
+
+            segmentEntries.forEach((entry, i) => {
+                params.set(`s${i}`, [entry.type, ...entry.texts].join("|"));
+            });
+
+            history.replaceState(null, "", `${location.pathname}?${params.toString()}`);
+        }
+
+        function loadFromURL() {
+            const params = new URLSearchParams(location.search);
+            const loaded = [];
+            let i = 0;
+
+            while (params.has(`s${i}`)) {
+                const parts = params.get(`s${i}`).split("|");
+                const type = TYPE_OPTIONS.includes(parts[0]) ? parts[0] : "prize";
+                const texts = parts.slice(1);
+
+                if (texts.length === 0) {
+                    texts.push("");
+                }
+
+                loaded.push({ type, texts, cursor: 0 });
+                i++;
+            }
+
+            if (loaded.length > 0) {
+                segmentEntries = loaded.map(normalizeEntry);
+            }
         }
 
         function setActiveView(viewName) {
@@ -312,6 +345,7 @@
                 addReplacement.addEventListener("click", () => {
                     segmentEntries[index].texts.push("");
                     clampCursor(segmentEntries[index]);
+                    serializeToURL();
                     renderSegmentList();
                 });
 
@@ -382,7 +416,7 @@
             segmentEntries.forEach((entry, index) => {
                 const label = document.createElement("span");
                 const text = document.createElement("span");
-                const angle = index * segmentSize + segmentSize / 2;
+                const angle = index * segmentSize + segmentSize / 2 - 90;
 
                 label.className = "wheel-label";
                 label.style.transform = `rotate(${angle}deg)`;
@@ -397,6 +431,7 @@
 
             if (shouldResetState) {
                 resetWheelState();
+                serializeToURL();
             }
         }
 
@@ -412,7 +447,7 @@
             newInput.focus();
         });
 
-        segmentEntries = segmentEntries.map(normalizeEntry);
+        loadFromURL();
 
         buildWheel();
         renderSegmentList();
