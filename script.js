@@ -1,19 +1,18 @@
 const TYPE_STYLES = {
-    prize: "#06d6a0",
-    bonus: "#118ab2",
-    challenge: "#ffd166",
-    miss: "#ef476f"
+    green:  { base: "#4ade80", deep: "#14532d" },
+    yellow: { base: "#fbbf24", deep: "#fbbf24" },
+    red:    { base: "#f87171", deep: "#450a0a" }
 };
 
 let segmentEntries = [
-    { type: "prize", texts: ["$10", "$20"], cursor: 0 },
-    { type: "prize", texts: ["$25"], cursor: 0 },
-    { type: "bonus", texts: ["$50", "$100"], cursor: 0 },
-    { type: "bonus", texts: ["$100", "Jackpot"], cursor: 0 },
-    { type: "miss", texts: ["Try Again"], cursor: 0 },
-    { type: "challenge", texts: ["Bonus", "Bonus x2"], cursor: 0 },
-    { type: "prize", texts: ["$75"], cursor: 0 },
-    { type: "bonus", texts: ["Jackpot"], cursor: 0 }
+    { type: "green",  texts: ["$10", "$20"],       cursor: 0 },
+    { type: "green",  texts: ["$25"],              cursor: 0 },
+    { type: "yellow", texts: ["$50", "$100"],      cursor: 0 },
+    { type: "yellow", texts: ["Jackpot"],          cursor: 0 },
+    { type: "red",    texts: ["Try Again"],        cursor: 0 },
+    { type: "yellow", texts: ["Bonus", "Bonus x2"], cursor: 0 },
+    { type: "green",  texts: ["$75"],              cursor: 0 },
+    { type: "red",    texts: ["Bankrupt"],         cursor: 0 }
 ];
 
 const wheel = document.getElementById("spinwheel");
@@ -30,6 +29,7 @@ const zoomDelayMs = 2300;
 const zoomDurationMs = 3500;
 const zoomResetDurationMs = 650;
 const spinAgainPauseMs = 2000;
+const textFadeMs = 300;
 let currentRotation = 0;
 let spinCompletionTimeout;
 let zoomCompletionTimeout;
@@ -52,7 +52,7 @@ function normalizeEntry(entry) {
     }
 
     return {
-        type: entry.type || "prize",
+        type: entry.type || "green",
         texts: chain.map((value) => String(value)),
         cursor: Number.isInteger(entry.cursor) ? Math.max(0, entry.cursor) : 0
     };
@@ -136,10 +136,41 @@ function queueNextSpin() {
     spinButton.disabled = true;
     wheelPanel.classList.add("is-holding");
 
-    applySegmentReplacement(pendingWinningIndex);
-    pendingWinningIndex = null;
-    buildWheel(false);
-    renderSegmentList();
+    const winningIndex = pendingWinningIndex;
+    const winningEntry = winningIndex != null ? segmentEntries[winningIndex] : null;
+    const willTextChange = winningEntry != null && winningEntry.cursor < winningEntry.texts.length - 1;
+    const previousGradient = wheel.style.getPropertyValue("--wheel-gradient");
+
+    if (willTextChange) {
+        const winningLabelText = wheel.querySelectorAll(".wheel-label-text")[winningIndex];
+        if (winningLabelText) {
+            winningLabelText.classList.add("is-fading-out");
+        }
+    }
+
+    window.setTimeout(() => {
+        applySegmentReplacement(winningIndex);
+        pendingWinningIndex = null;
+        buildWheel(false);
+        renderSegmentList();
+
+        if (willTextChange) {
+            if (previousGradient) {
+                wheel.style.setProperty("--wheel-gradient-prev", previousGradient);
+                wheel.classList.remove("is-gradient-fading");
+                void wheel.offsetWidth;
+                wheel.classList.add("is-gradient-fading");
+                window.setTimeout(() => {
+                    wheel.classList.remove("is-gradient-fading");
+                }, textFadeMs);
+            }
+
+            const newLabelText = wheel.querySelectorAll(".wheel-label-text")[winningIndex];
+            if (newLabelText) {
+                newLabelText.classList.add("is-fading-in");
+            }
+        }
+    }, willTextChange ? textFadeMs : 0);
 
     const startResetCycle = () => {
         if (!wheelPanel.classList.contains("is-zoomed")) {
@@ -163,8 +194,24 @@ function queueNextSpin() {
     window.setTimeout(startResetCycle, spinAgainPauseMs);
 }
 
+function lerpColor(hexA, hexB, t) {
+    const pa = parseInt(hexA.slice(1), 16);
+    const pb = parseInt(hexB.slice(1), 16);
+    const ar = (pa >> 16) & 0xff, ag = (pa >> 8) & 0xff, ab = pa & 0xff;
+    const br = (pb >> 16) & 0xff, bg = (pb >> 8) & 0xff, bb = pb & 0xff;
+    const r = Math.round(ar + (br - ar) * t);
+    const g = Math.round(ag + (bg - ag) * t);
+    const b = Math.round(ab + (bb - ab) * t);
+    return `#${(r << 16 | g << 8 | b).toString(16).padStart(6, "0")}`;
+}
+
 function getSegmentColor(entry) {
-    return TYPE_STYLES[entry.type] || "#26547c";
+    const style = TYPE_STYLES[entry.type];
+    if (!style) return "#888888";
+    const totalSteps = Math.max(entry.texts.length - 1, 0);
+    if (totalSteps === 0) return style.base;
+    const t = Math.min(entry.cursor / totalSteps, 1);
+    return lerpColor(style.base, style.deep, t);
 }
 
 function serializeToURL() {
@@ -184,7 +231,7 @@ function loadFromURL() {
 
     while (params.has(`s${i}`)) {
         const parts = params.get(`s${i}`).split("|");
-        const type = TYPE_OPTIONS.includes(parts[0]) ? parts[0] : "prize";
+        const type = TYPE_OPTIONS.includes(parts[0]) ? parts[0] : "green";
         const texts = parts.slice(1);
 
         if (texts.length === 0) {
@@ -224,7 +271,24 @@ function resetWheelState() {
     spinButton.disabled = segmentEntries.length < 2;
 }
 
-const TYPE_OPTIONS = ["prize", "bonus", "challenge", "miss"];
+const TYPE_OPTIONS = ["green", "yellow", "red"];
+
+function moveSegment(fromIndex, toIndex) {
+    if (
+        fromIndex === toIndex
+        || fromIndex < 0
+        || toIndex < 0
+        || fromIndex >= segmentEntries.length
+        || toIndex >= segmentEntries.length
+    ) {
+        return;
+    }
+
+    const [movedEntry] = segmentEntries.splice(fromIndex, 1);
+    segmentEntries.splice(toIndex, 0, movedEntry);
+    buildWheel();
+    renderSegmentList();
+}
 
 function renderSegmentList() {
     segmentList.innerHTML = "";
@@ -236,6 +300,9 @@ function renderSegmentList() {
         const typeWrap = document.createElement("div");
         const typeDot = document.createElement("span");
         const typeSelect = document.createElement("select");
+        const orderControls = document.createElement("div");
+        const moveUp = document.createElement("button");
+        const moveDown = document.createElement("button");
         const remove = document.createElement("button");
         const replacements = document.createElement("div");
         const replacementsTitle = document.createElement("p");
@@ -283,6 +350,24 @@ function renderSegmentList() {
             typeDot.style.backgroundColor = getSegmentColor(segmentEntries[index]);
             buildWheel();
         });
+
+        orderControls.className = "segment-order-controls";
+
+        moveUp.type = "button";
+        moveUp.className = "segment-order-button";
+        moveUp.textContent = "Up";
+        moveUp.disabled = index === 0;
+        moveUp.setAttribute("aria-label", `Move ${entry.texts[0] || "segment"} up`);
+        moveUp.addEventListener("click", () => moveSegment(index, index - 1));
+
+        moveDown.type = "button";
+        moveDown.className = "segment-order-button";
+        moveDown.textContent = "Down";
+        moveDown.disabled = index === segmentEntries.length - 1;
+        moveDown.setAttribute("aria-label", `Move ${entry.texts[0] || "segment"} down`);
+        moveDown.addEventListener("click", () => moveSegment(index, index + 1));
+
+        orderControls.append(moveUp, moveDown);
 
         remove.type = "button";
         remove.className = "remove-button";
@@ -339,7 +424,7 @@ function renderSegmentList() {
         });
 
         typeWrap.append(typeDot, typeSelect);
-        mainControls.append(textInput, typeWrap, remove);
+        mainControls.append(textInput, typeWrap, orderControls, remove);
         replacements.append(replacementsTitle, currentValue, addReplacement);
         listItem.append(mainControls, replacements);
         segmentList.appendChild(listItem);
@@ -394,7 +479,7 @@ playTab.addEventListener("click", () => setActiveView("play"));
 editTab.addEventListener("click", () => setActiveView("edit"));
 
 addSegmentButton.addEventListener("click", () => {
-    segmentEntries.push({ type: "prize", texts: [""], cursor: 0 });
+    segmentEntries.push({ type: "green", texts: [""], cursor: 0 });
     buildWheel();
     renderSegmentList();
 

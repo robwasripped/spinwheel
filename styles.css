@@ -292,7 +292,7 @@ body {
 
 .segment-main-controls {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-columns: minmax(0, 1fr) auto auto auto;
     gap: 0.55rem;
     align-items: center;
 }
@@ -355,6 +355,28 @@ body {
     font-weight: 700;
     padding: 0.4rem 0.62rem;
     cursor: pointer;
+}
+
+.segment-order-controls {
+    display: inline-flex;
+    gap: 0.35rem;
+}
+
+.segment-order-button {
+    border: 1px solid #cbd5e1;
+    border-radius: 0.45rem;
+    background: #ffffff;
+    color: #334155;
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 0.38rem 0.55rem;
+    cursor: pointer;
+}
+
+.segment-order-button:disabled {
+    opacity: 0.45;
+    cursor: default;
 }
 
 .segment-replacements {
@@ -497,6 +519,38 @@ body {
     to {
         opacity: 0;
     }
+}
+
+.wheel-label-text.is-fading-out {
+    animation: label-fade-out 0.3s ease-out forwards;
+}
+
+.wheel-label-text.is-fading-in {
+    animation: label-fade-in 0.3s ease-out forwards;
+}
+
+.wheel.is-gradient-fading::before {
+    inset: 0;
+    background: var(--wheel-gradient-prev, var(--wheel-gradient));
+    filter: none;
+    transform: none;
+    opacity: 1;
+    animation: wheel-gradient-crossfade 0.3s ease-out forwards;
+}
+
+@keyframes label-fade-out {
+    from { opacity: 1; }
+    to   { opacity: 0; }
+}
+
+@keyframes label-fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+@keyframes wheel-gradient-crossfade {
+    from { opacity: 1; }
+    to   { opacity: 0; }
 }
 
 @keyframes segment-color-blur-up {
