@@ -292,7 +292,7 @@ body {
 
 .segment-main-controls {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto auto auto;
+    grid-template-columns: minmax(0, 1fr) minmax(11rem, 0.9fr) auto auto auto;
     gap: 0.55rem;
     align-items: center;
 }
@@ -310,6 +310,26 @@ body {
 .segment-text-input:focus {
     outline: 2px solid #89a4c6;
     outline-offset: 1px;
+}
+
+.segment-timer-input {
+    width: 100%;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.6rem;
+    font: inherit;
+    font-size: 0.9rem;
+    background: #fff;
+}
+
+.segment-timer-input:focus {
+    outline: 2px solid #89a4c6;
+    outline-offset: 1px;
+}
+
+.segment-timer-input.is-invalid {
+    border-color: #dc2626;
+    background: #fff1f2;
 }
 
 .segment-type-wrap {
@@ -399,7 +419,7 @@ body {
 
 .replacement-row {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) minmax(6.5rem, 8rem) auto;
     gap: 0.5rem;
 }
 
@@ -416,6 +436,26 @@ body {
 .replacement-input:focus {
     outline: 2px solid #89a4c6;
     outline-offset: 1px;
+}
+
+.replacement-timer-input {
+    width: 100%;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.5rem;
+    padding: 0.45rem 0.55rem;
+    font: inherit;
+    font-size: 0.82rem;
+    background: #fff;
+}
+
+.replacement-timer-input:focus {
+    outline: 2px solid #89a4c6;
+    outline-offset: 1px;
+}
+
+.replacement-timer-input.is-invalid {
+    border-color: #dc2626;
+    background: #fff1f2;
 }
 
 .add-replacement-button,
@@ -459,6 +499,79 @@ body {
 
 .wheel-panel.is-zoomed .spin-button {
     animation: spin-button-fade-in 0.45s ease-out 0.12s forwards;
+}
+
+.corner-timer {
+    --timer-progress: 0deg;
+    position: fixed;
+    right: 1.35rem;
+    bottom: 1.35rem;
+    z-index: 30;
+    opacity: 0;
+    transform: translateY(0.5rem) scale(0.95);
+    transition: opacity 180ms ease, transform 180ms ease;
+    pointer-events: none;
+}
+
+.corner-timer.is-visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+}
+
+.corner-timer-face {
+    width: 13.2rem;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    border: 1.2rem solid #1f2933;
+    box-shadow: 0 0 0 1.1rem #ffffff, 0 1.9rem 3.2rem rgba(15, 23, 42, 0.24);
+    background: conic-gradient(#dc2626 var(--timer-progress), #ffffff 0deg 360deg);
+    display: grid;
+    place-items: center;
+    position: relative;
+    transform: scaleX(-1);
+}
+
+.corner-timer-time {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #0f172a;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.75);
+    transform: scaleX(-1);
+}
+
+.corner-timer-ready-label {
+    position: absolute;
+    left: 50%;
+    bottom: 1.45rem;
+    transform: translateX(-50%) scaleX(-1);
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #1e293b;
+    background: rgba(255, 255, 255, 0.78);
+    border: 1px solid rgba(15, 23, 42, 0.16);
+    border-radius: 999px;
+    padding: 0.14rem 0.5rem;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 120ms ease;
+    pointer-events: none;
+}
+
+.corner-timer.is-ready .corner-timer-face {
+    cursor: pointer;
+}
+
+.corner-timer.is-ready .corner-timer-ready-label {
+    opacity: 1;
+}
+
+.corner-timer.is-running .corner-timer-face {
+    cursor: default;
+}
+
+.corner-timer.is-running .corner-timer-ready-label {
+    opacity: 0;
 }
 
 @keyframes wheel-spin-up {
@@ -701,6 +814,26 @@ body {
     .wheel-label-text {
         width: 5.25rem;
         font-size: 0.8rem;
+    }
+
+    .corner-timer {
+        right: 0.75rem;
+        bottom: 0.75rem;
+    }
+
+    .corner-timer-face {
+        width: 9rem;
+        border-width: 0.78rem;
+        box-shadow: 0 0 0 0.7rem #ffffff, 0 1rem 1.8rem rgba(15, 23, 42, 0.2);
+    }
+
+    .corner-timer-time {
+        font-size: 1.35rem;
+    }
+
+    .corner-timer-ready-label {
+        bottom: 1rem;
+        font-size: 0.72rem;
     }
 
     @keyframes segment-closeup {
